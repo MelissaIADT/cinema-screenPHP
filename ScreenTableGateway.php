@@ -8,9 +8,12 @@ class ScreenTableGateway {
         $this->connection = $c;
     }
     
+    //Retrieves screens
     public function getScreens(){
         //execute the query to get all the screens in the table
-        $sqlQuery = "SELECT * FROM screendb";
+        $sqlQuery = "SELECT s.*, m.name AS movieName
+                FROM screendb s
+                LEFT JOIN movies m ON m.id = s.movie_id";
         
         $statement = $this->connection->prepare($sqlQuery);
         $status = $statement->execute();
@@ -22,15 +25,42 @@ class ScreenTableGateway {
         return $statement;
     }
     
+    //Retrieves screens by using the movie ID
+    public function getScreenByMovieId($movieId) {
+        //execute the query to get the user with a certain ID
+        $sqlQuery = "SELECT s.*, m.name AS movieName
+                    FROM screendb s
+                    WHERE s.movieId = :movieId";
+        
+
+        $params = array(
+            'movieId' => $movieId
+        );
+        
+        $statement = $this->connection->prepare($sqlQuery);
+        $status = $statement->execute($params);
+        
+        if(!$status){
+            die("Could not retrieve screens");
+        }
+        
+        return $statement;
+    }
+    
+    
+    //Retrieves screen by their ID
     public function getScreenById($id) {
         //execute the query to get the user with a certain ID
-        $sqlQuery = "SELECT * FROM screendb WHERE id = :id";
+        $sqlQuery = "SELECT s.*, m.name AS movieName
+                    FROM screendb s
+                    LEFT JOIN movies m ON m.id = s.movie_id
+                    WHERE s.id = :id";
         
         $statement = $this->connection->prepare($sqlQuery);
         $params = array(
             "id" => $id
         );
-        
+         
         $status = $statement->execute($params);
         
         if(!$status){
@@ -41,10 +71,10 @@ class ScreenTableGateway {
     }
     
     //Insert
-    public function insertScreen($n, $ne, $ns, $dni, $pt){
+    public function insertScreen($n, $ne, $ns, $dni, $pt, $mId){
         $sqlQuery = "INSERT INTO screendb " .
                 "(name, numExits, numSeats, dateNextInspection, projectorType)" .
-                "VALUES(:name, :numExits, :numSeats, :dateNextInspection, :projectorType)";
+                "VALUES(:name, :numExits, :numSeats, :dateNextInspection, :projectorType, :movie_id)";
         
         $statement = $this->connection->prepare($sqlQuery);
         $params = array(
@@ -53,6 +83,7 @@ class ScreenTableGateway {
             "numSeats" => $ns,
             "dateNextInspection" => $dni,
             "projectorType" => $pt,
+            "movie_id" => $mId
         );
                 
         $status = $statement->execute($params);
@@ -92,6 +123,7 @@ class ScreenTableGateway {
                 "numSeats = :numSeats, " .
                 "dateNextInspection = :dateNextInspection, " .
                 "projectorType = :projectorType " .
+                "movie_id = :movie_id " .
                 "WHERE id = :id";
         
         $statement = $this->connection->prepare($sqlQuery);
@@ -101,15 +133,16 @@ class ScreenTableGateway {
             "numExits" => $ne,
             "numSeats" => $ns,
             "dateNextInspection" => $dni,
-            "projectorType" => $pt
+            "projectorType" => $pt,
+            "movie_id" => $mId
         );
         
         $status = $statement->execute($params);
         
-        if(!$status)
+        /*if(!$status)
         {
             die("Could not update screen..");
-        }
+        }*/
         
         return ($statement->rowCount() == 1);
     }
